@@ -48,7 +48,7 @@ func (e *DNSAdBlock) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 	requestCount.WithLabelValues(metrics.WithServer(ctx)).Inc()
 	requestCountBySource.WithLabelValues(metrics.WithServer(ctx), state.IP()).Inc()
 
-	if !e.RuleSet.IsWhitelisted(qname) && (e.blockMap[qname] || e.RuleSet.IsBlacklisted(qname)) {
+	if !e.RuleSet.IsWhitelisted(qname) && (e.RuleSet.IsBlacklisted(qname) || e.blockMap[qname]) {
 		var answers []dns.RR
 		if state.QType() == dns.TypeAAAA {
 			answers = aaaa(state.Name(), []net.IP{e.TargetIPv6})

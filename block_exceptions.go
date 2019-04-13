@@ -14,7 +14,9 @@
 
 package ads
 
-import "regexp"
+import (
+	"regexp"
+)
 
 type RuleSet struct {
 	Blacklist      map[string]bool

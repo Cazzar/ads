@@ -30,6 +30,7 @@ import (
 )
 
 const benchmarkSize = 2500000
+const regexCount = 100
 
 var blockmap BlockMap
 
@@ -81,7 +82,16 @@ func init() {
 }
 
 func BenchmarkBlockSpeed(b *testing.B) {
-	p := initBenchmarkPlugin(b)
+	rs := RuleSet{}
+
+	for i := 0; i < regexCount; i++ {
+		err := rs.AddRegexToBlacklist(fmt.Sprintf("%08d.de", i))
+		if err != nil {
+			log.Infof(err.Error())
+		}
+	}
+
+	p := initBenchmarkPlugin(b, rs)
 	ctx := context.TODO()
 
 	log.Infof("Trycount %d", b.N)
@@ -114,12 +124,12 @@ func extractGzip(data []byte) ([]byte, error) {
 	return ioutil.ReadAll(compressionReader)
 }
 
-func initBenchmarkPlugin(t *testing.B) *DNSAdBlock {
+func initBenchmarkPlugin(t *testing.B, rs RuleSet) *DNSAdBlock {
 	p := DNSAdBlock{
 		Next:       nxDomainHandler(),
 		blockMap:   blockmap,
 		BlockLists: []string{"http://localhost:8080/mylist.txt"},
-		RuleSet:    RuleSet{},
+		RuleSet:    rs,
 		updater:    nil,
 		LogBlocks:  false,
 		TargetIP:   net.ParseIP("10.1.33.7"),
