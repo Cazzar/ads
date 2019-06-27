@@ -48,7 +48,9 @@ func (e *DNSAdBlock) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 
 	if !e.RuleSet.IsWhitelisted(qname) && (e.blockMap[qname] || e.RuleSet.IsBlacklisted(qname)) {
 		var answers []dns.RR
-		if state.QType() == dns.TypeAAAA {
+		if e.config.RespondWithNXDomain {
+			answers = nxdomain(state.Name())
+		} else if state.QType() == dns.TypeAAAA {
 			answers = aaaa(state.Name(), []net.IP{e.config.TargetIPv6})
 		} else {
 			answers = a(state.Name(), []net.IP{e.config.TargetIP})
@@ -68,6 +70,9 @@ func (e *DNSAdBlock) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 			log.Infof("Blocked request %q from %q", qname, state.IP())
 		}
 
+		if (e.config.RespondWithNXDomain) {
+			return dns.RcodeNameError, nil 
+		}
 		return dns.RcodeSuccess, nil
 	} else {
 		return plugin.NextOrFailure(e.Name(), e.Next, ctx, w, r)
@@ -100,3 +105,11 @@ func aaaa(zone string, ips []net.IP) []dns.RR {
 	}
 	return answers
 }
+
+ func nxdomain(zone string) []dns.RR {
+	var answers []dns.RR
+	s := fmt.Sprintf("%s 60 IN SOA ns1.%s postmaster.%s 1524370381 14400 3600 604800 60", name, name, name)
+	soa, _ := dns.NewRR(s)
+	answers = append(answers, soa)
+	return answers
+ }

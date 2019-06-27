@@ -41,6 +41,7 @@ type adsPluginConfig struct {
 	EnableLogging              bool
 	EnableAutoUpdate           bool
 	EnableBlocklistPersistence bool
+	RespondWithNXDomain        bool
 }
 
 func parsePluginConfiguration(c *caddy.Controller) (*adsPluginConfig, error) {
@@ -106,6 +107,8 @@ func parsePluginConfiguration(c *caddy.Controller) (*adsPluginConfig, error) {
 			break
 		case "log":
 			config.EnableLogging = true
+		case "nxdomain":
+			config.RespondWithNXDomain = true
 		case "whitelist":
 			if !c.NextArg() {
 				return nil, plugin.Error("ads", c.Err("No name for whitelist entry defined"))
