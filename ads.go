@@ -67,7 +67,11 @@ func (e *DNSAdBlock) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 		blockedRequestCountBySource.WithLabelValues(metrics.WithServer(ctx), state.IP()).Inc()
 
 		if e.config.EnableLogging {
-			log.Infof("Blocked request %q from %q", qname, state.IP())
+			var extra := ""
+			if e.config.RespondWithNXDOmain {
+				extra = ", responding with dns.RcodeNameError"
+			}
+			log.Infof("Blocked request %q from %q%s", qname, state.IP(), extra)
 		}
 
 		if (e.config.RespondWithNXDomain) {
